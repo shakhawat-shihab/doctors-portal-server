@@ -79,7 +79,7 @@ async function run() {
                 isAdmin = true;
             }
             res.json({ admin: isAdmin });
-        })
+        });
 
         app.post('/users', async (req, res) => {
             const user = req.body;
