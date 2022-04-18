@@ -4,11 +4,12 @@ const cors = require('cors');
 const admin = require("firebase-admin");
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId;
 
 const port = process.env.PORT || 5000;
 
-// const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-const serviceAccount = require('./doctor-portal-shs.json');
+//const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -49,9 +50,7 @@ async function run() {
             //http://localhost:5000/appointments?email=shihab@gmail.com&date=07/11/2021
             const email = req.query.email;
             const date = req.query.date;
-
             const query = { email: email, date: date }
-
             const cursor = appointmentsCollection.find(query);
             const appointments = await cursor.toArray();
             res.json(appointments);
@@ -62,6 +61,13 @@ async function run() {
             const result = await appointmentsCollection.insertOne(appointment);
             res.json(result)
         });
+
+        app.get('appointmnents/:appointmentId', async (req, res) => {
+            const appointmentId = req.params.appointmentId;
+            const query = { _id: ObjectId(appointmentId) };
+            const appointment = await appointmentsCollection.findOne(query);
+            res.json(appointment);
+        })
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -76,6 +82,7 @@ async function run() {
 
         app.post('/users', async (req, res) => {
             const user = req.body;
+            console.log('post /users ', user)
             const result = await usersCollection.insertOne(user);
             console.log(result);
             res.json(result);
@@ -83,6 +90,7 @@ async function run() {
 
         app.put('/users', async (req, res) => {
             const user = req.body;
+            console.log('put /users ', user)
             const filter = { email: user.email };
             const options = { upsert: true };
             const updateDoc = { $set: user };
