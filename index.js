@@ -23,6 +23,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+
 async function verifyToken(req, res, next) {
     if (req.headers?.authorization?.startsWith('Bearer ')) {
         const token = req.headers.authorization.split(' ')[1];
@@ -62,12 +63,12 @@ async function run() {
             res.json(result)
         });
 
-        app.get('appointmnents/:appointmentId', async (req, res) => {
-            const appointmentId = req.params.appointmentId;
-            const query = { _id: ObjectId(appointmentId) };
-            const appointment = await appointmentsCollection.findOne(query);
-            res.json(appointment);
-        })
+        // app.get('appointmnents/:appointmentId', async (req, res) => {
+        //     const appointmentId = req.params.appointmentId;
+        //     const query = { _id: ObjectId(appointmentId) };
+        //     const appointment = await appointmentsCollection.findOne(query);
+        //     res.json(appointment);
+        // })
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
