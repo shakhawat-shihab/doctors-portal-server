@@ -63,12 +63,12 @@ async function run() {
             res.json(result)
         });
 
-        // app.get('appointmnents/:appointmentId', async (req, res) => {
-        //     const appointmentId = req.params.appointmentId;
-        //     const query = { _id: ObjectId(appointmentId) };
-        //     const appointment = await appointmentsCollection.findOne(query);
-        //     res.json(appointment);
-        // })
+        app.get('appointmnents/:appointmentId', async (req, res) => {
+            const appointmentId = req.params.appointmentId;
+            const query = { _id: ObjectId(appointmentId) };
+            const appointment = await appointmentsCollection.findOne(query);
+            res.json(appointment);
+        })
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
