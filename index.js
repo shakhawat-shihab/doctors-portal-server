@@ -8,14 +8,20 @@ const ObjectId = require('mongodb').ObjectId;
 
 const port = process.env.PORT || 5000;
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-//const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
-
+//const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
 });
 
+
+// This is your test secret API key.
+//const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const stripe = require("stripe")('sk_test_51Kpnq6JmlJsO1Fghx0h2arbM1R3qVwyK6PRvAy70eIGs2csbSezBlTp5HCxtAHohr3Hs8H93y0vRL7M8YGMsjDtU005MmTU11E');
+
+
+//middleware
 app.use(cors());
 app.use(express.json());
 
@@ -28,7 +34,6 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function verifyToken(req, res, next) {
     if (req.headers?.authorization?.startsWith('Bearer ')) {
         const token = req.headers.authorization.split(' ')[1];
-
         try {
             const decodedUser = await admin.auth().verifyIdToken(token);
             req.decodedEmail = decodedUser.email;
@@ -50,13 +55,24 @@ async function run() {
         const usersCollection = database.collection('users');
 
         app.get('/appointments', verifyToken, async (req, res) => {
-            //http://localhost:5000/appointments?email=shihab@gmail.com&date=07/11/2021
+            //http://localhost:5000/appointments?email=sondachtg@gmail.com&date=4/20/2022
+            const requester = req.decodedEmail;
             const email = req.query.email;
             const date = req.query.date;
-            const query = { email: email, date: date }
-            const cursor = appointmentsCollection.find(query);
-            const appointments = await cursor.toArray();
-            res.json(appointments);
+            if (requester === email) {
+                const query = { email: email, date: date }
+                const cursor = appointmentsCollection.find(query);
+                const appointments = await cursor.toArray();
+                res.json(appointments);
+            }
+            else {
+                res.status(403).json({ message: 'you do not have access to view others appointment' })
+            }
+
+            // const query = { email: email, date: date }
+            // const cursor = appointmentsCollection.find(query);
+            // const appointments = await cursor.toArray();
+            // res.json(appointments);
         })
 
         app.post('/appointments', async (req, res) => {
@@ -65,9 +81,25 @@ async function run() {
             res.json(result)
         });
 
-        app.get('appointmnents/:appointmentId', async (req, res) => {
-            const appointmentId = req.params.appointmentId;
-            const query = { _id: ObjectId(appointmentId) };
+        app.put('/appointment/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    payment: payment
+                }
+            };
+            const result = await appointmentsCollection.updateOne(filter, updateDoc);
+            res.json(result);
+        })
+
+
+        app.get('/appointment/:id', async (req, res) => {
+            const Id = req.params.id;
+            console.log('appointment id : ', Id);
+            //res.json({ id: Id });
+            const query = { _id: ObjectId(Id) };
             const appointment = await appointmentsCollection.findOne(query);
             res.json(appointment);
         })
@@ -116,9 +148,23 @@ async function run() {
             else {
                 res.status(403).json({ message: 'you do not have access to make admin' })
             }
-
         })
 
+
+        app.post("/create-payment-intent", async (req, res) => {
+            const paymentInfo = req.body;
+            console.log('cpi ', paymentInfo);
+            const amount = paymentInfo.price * 100;
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.json({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
     }
     finally {
         // await client.close();
