@@ -8,8 +8,8 @@ const ObjectId = require('mongodb').ObjectId;
 
 const port = process.env.PORT || 5000;
 
-//const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+//const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -17,8 +17,8 @@ admin.initializeApp({
 
 
 // This is your test secret API key.
-//const stripe = require("stripe")(process.env.STRIPE_SECRET);
-const stripe = require("stripe")('sk_test_51Kpnq6JmlJsO1Fghx0h2arbM1R3qVwyK6PRvAy70eIGs2csbSezBlTp5HCxtAHohr3Hs8H93y0vRL7M8YGMsjDtU005MmTU11E');
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
+//const stripe = require("stripe")('sk_test_51Kpnq6JmlJsO1Fghx0h2arbM1R3qVwyK6PRvAy70eIGs2csbSezBlTp5HCxtAHohr3Hs8H93y0vRL7M8YGMsjDtU005MmTU11E');
 
 
 //middleware
