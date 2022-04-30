@@ -5,11 +5,12 @@ const admin = require("firebase-admin");
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
 const ObjectId = require('mongodb').ObjectId;
+const fileUpload = require('express-fileupload');
 
 const port = process.env.PORT || 5000;
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-//const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
+// const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+const serviceAccount = require('./doctors-portal-firebase-adminsdk.json');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -17,13 +18,14 @@ admin.initializeApp({
 
 
 // This is your test secret API key.
-const stripe = require("stripe")(process.env.STRIPE_SECRET);
-//const stripe = require("stripe")('sk_test_51Kpnq6JmlJsO1Fghx0h2arbM1R3qVwyK6PRvAy70eIGs2csbSezBlTp5HCxtAHohr3Hs8H93y0vRL7M8YGMsjDtU005MmTU11E');
+// const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const stripe = require("stripe")('sk_test_51Kpnq6JmlJsO1Fghx0h2arbM1R3qVwyK6PRvAy70eIGs2csbSezBlTp5HCxtAHohr3Hs8H93y0vRL7M8YGMsjDtU005MmTU11E');
 
 
 //middleware
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload());
 
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.swu9d.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zwiso.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -53,6 +55,7 @@ async function run() {
         const database = client.db('doctors_portal');
         const appointmentsCollection = database.collection('appointments');
         const usersCollection = database.collection('users');
+        const doctorsCollection = database.collection('doctors');
 
         app.get('/appointments', verifyToken, async (req, res) => {
             //http://localhost:5000/appointments?email=sondachtg@gmail.com&date=4/20/2022
@@ -68,7 +71,6 @@ async function run() {
             else {
                 res.status(403).json({ message: 'you do not have access to view others appointment' })
             }
-
             // const query = { email: email, date: date }
             // const cursor = appointmentsCollection.find(query);
             // const appointments = await cursor.toArray();
@@ -148,7 +150,32 @@ async function run() {
             else {
                 res.status(403).json({ message: 'you do not have access to make admin' })
             }
+        });
+
+
+        // doctors api
+        app.get('/doctors', async (req, res) => {
+            const cursor = doctorsCollection.find({});
+            const doctors = await cursor.toArray();
+            res.json(doctors);
+        });
+
+        app.post('/doctors', async (req, res) => {
+            const name = req.body.name;
+            const email = req.body.email;
+            const pic = req.files.image;
+            const picData = pic.data;
+            const encodedPic = picData.toString('base64');
+            const imageBuffer = Buffer.from(encodedPic, 'base64');
+            const doctor = {
+                name,
+                email,
+                image: imageBuffer
+            }
+            const result = await doctorsCollection.insertOne(doctor);
+            res.json(result);
         })
+
 
 
         app.post("/create-payment-intent", async (req, res) => {
